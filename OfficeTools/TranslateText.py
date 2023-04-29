@@ -30,17 +30,31 @@ class TranslateText(unohelper.Base, XJobExecutor):
 			return
 		controller = document.getCurrentController()
 		select = controller.getSelection()
-		count = select.getCount()
-		for i in range(count) :
-			symbol = select.getByIndex(i)
-			theString = symbol.getString()
-			if len(theString)!=0 :
-				#get the XText interface
-				text = document.Text
-				#create an XTextRange at the end of the document
-				tRange = text.End
-				#and set the string
-				tRange.String = str(count)
+		
+		cursor = document.getCurrentController().getViewCursor()
+		selected_text = cursor.getString()
+		# Задаем язык и направление перевода
+		src_lang = 'en'
+		dst_lang = 'ru'
+
+		# Используем сервис перевода Яндекса
+		translate_url = 'https://translate.yandex.net/api/v1.5/tr/translate'
+		translate_key = 'YOUR_API_KEY'
+		params = {
+			'key': translate_key,
+			'text': selected_text,
+			'lang': f'{src_lang}-{dst_lang}'
+		}
+		response = requests.get(translate_url, params=params)
+
+		# Извлекаем переведенный текст из ответа
+		xml_content = ElementTree.fromstring(response.content)
+		translated_text = xml_content[0][0].text
+
+		# Вставляем переведенный текст вместо исходного
+		cursor.setString(translated_text)
+
+		
 		
 		
 # Регистрация реализации службы
