@@ -33,29 +33,27 @@ class TranslateText(unohelper.Base, XJobExecutor):
 		
 		cursor = document.getCurrentController().getViewCursor()
 		selected_text = cursor.getString()
-		# Задаем язык и направление перевода
-		src_lang = 'en'
-		dst_lang = 'ru'
+		# # Задаем язык и направление перевода
+		# src_lang = 'en'
+		# dst_lang = 'ru'
 
-		# Используем сервис перевода Яндекса
-		translate_url = 'https://translate.yandex.net/api/v1.5/tr/translate'
-		translate_key = 'YOUR_API_KEY'
-		params = {
-			'key': translate_key,
-			'text': selected_text,
-			'lang': f'{src_lang}-{dst_lang}'
-		}
-		response = requests.get(translate_url, params=params)
+		# # Используем сервис перевода Яндекса
+		# translate_url = 'https://translate.yandex.net/api/v1.5/tr/translate'
+		# translate_key = 'YOUR_API_KEY'
+		# params = {
+		# 	'key': translate_key,
+		# 	'text': selected_text,
+		# 	'lang': f'{src_lang}-{dst_lang}'
+		# }
+		# response = requests.get(translate_url, params=params)
 
-		# Извлекаем переведенный текст из ответа
-		xml_content = ElementTree.fromstring(response.content)
-		translated_text = xml_content[0][0].text
+		# # Извлекаем переведенный текст из ответа
+		# xml_content = ElementTree.fromstring(response.content)
+		# translated_text = xml_content[0][0].text
 
-		# Вставляем переведенный текст вместо исходного
-		cursor.setString(translated_text)
+		# # Вставляем переведенный текст вместо исходного
+		cursor.setString("'" + selected_text + "'")
 
-		
-		
 		
 # Регистрация реализации службы
 g_ImplementationHelper = unohelper.ImplementationHelper()
