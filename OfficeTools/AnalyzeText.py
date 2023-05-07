@@ -5,12 +5,21 @@ import codecs
 
 import uno
 import unohelper
+import Window
+#import pandas as pd
+from string import punctuation #сборник символов пунктуации
+#import nltk#.tokenize import word_tokenize #для токенизации по словам
+#from nltk.corpus import stopwords #сборник стоп-слов
+#import pymorphy2 #для морфологическтого анализа текста
+#from nltk.probability import FreqDist #используется для кодирования «частотных распределений»
 
 from com.sun.star.awt.FontWeight import (NORMAL, BOLD)
 from com.sun.star.awt.FontUnderline import (SINGLE, NONE)
 from com.sun.star.awt.FontSlant import (NONE, ITALIC)
 
 from com.sun.star.task import XJobExecutor
+
+
 
 class AnalyzeText(unohelper.Base, XJobExecutor):
 	def __init__(self, ctx):
@@ -41,8 +50,9 @@ class AnalyzeText(unohelper.Base, XJobExecutor):
 				tRange = text.End
 				#and set the string
 				tRange.String = str(2)
-		
-		
+				#msg = 'PIP was installed sucessfully'
+				#Window.msgbox(msg)
+
 # Регистрация реализации службы
 g_ImplementationHelper = unohelper.ImplementationHelper()
 
@@ -50,3 +60,4 @@ g_ImplementationHelper.addImplementation( \
 		AnalyzeText,                                # Имя класса UNO
 		"org.openoffice.comp.pyuno.exp.AnalyzeText",# Имя реализации
 		("com.sun.star.task.Job",),)                # Список реализованных служб
+
