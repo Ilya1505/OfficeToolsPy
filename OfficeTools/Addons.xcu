@@ -30,7 +30,7 @@
                 <node oor:name="Submenu">
                     <node oor:name="m1" oor:op="replace">
                         <prop oor:name="URL" oor:type="xs:string">
-                            <value>service:org.openoffice.comp.pyuno.exp.TranslateText?export</value>
+                            <value>service:org.openoffice.comp.pyuno.exp.Translate_Context?export</value>
                         </prop>
                         <prop oor:name="Title" oor:type="xs:string">
                             <value xml:lang="en-US">Translate the text</value>

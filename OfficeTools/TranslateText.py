@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import io
 import html
 import os.path
@@ -14,155 +15,186 @@ from com.sun.star.awt.FontWeight import (NORMAL, BOLD)
 from com.sun.star.awt.FontUnderline import (SINGLE, NONE)
 from com.sun.star.awt.FontSlant import (NONE, ITALIC)
 
+from com.sun.star.awt import XActionListener
+
 from com.sun.star.task import XJobExecutor
 
-class TranslateText(unohelper.Base, XJobExecutor):
-	def __init__(self, ctx):
-		'''Конструктор класса'''
-		# Сохранение контекста компонента для последующего использования 
-		self.ctx = ctx
-		self.CONTENT_TYPE = "application/json"
-		self.TOKEN = "Api-Key " + token
-		self.target_language = 'en'
-		self.source_language = 'ru'
-		self.url_yandex = 'https://translate.api.cloud.yandex.net/translate/v2/translate'
-	
-	
-	def trigger(self, event):
-		'''Обработчик события'''
-		# Получение объекта рабочего стола
-		desktop = self.ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", self.ctx)
-		# Получение объекта текущего документа
-		document = desktop.getCurrentComponent()
-		# Проверка возможности доступа к тексту документа
-		# if not hasattr(document, "Text"):
-		# 	return
-		# controller = document.getCurrentController()
-		# select = controller.getSelection()
-		
-		# cursor = document.getCurrentController().getViewCursor()
-		# selected_text = cursor.getString()
+class Translate_Text( unohelper.Base, XActionListener ):
+    def __init__(self, ctx):
+        self.ctx = ctx
+        self.CONTENT_TYPE = "application/json"
+        self.TOKEN = "Api-Key " + token
+        self.source_language = 'ru'
+        self.target_language = 'en'
+        self.url_yandex = 'https://translate.api.cloud.yandex.net/translate/v2/translate'
+        self.dialog = None
 
-		# body = {
-		# 	"targetLanguageCode": self.target_language,
-		# 	"sourceLanguageCode": self.source_language,
-		# 	"texts": selected_text,
-		# }
+    def actionPerformed(self, actionEvent):
+        if actionEvent.Source.Model.Name == 'change_but':
+            self.change_language()
+        else:
+            self.translate()
 
-		# headers = {
-		# 	"Content-Type": self.CONTENT_TYPE,
-		# 	"Authorization": self.TOKEN
-		# }
+    def change_language(self):
+        if self.source_language == 'ru':
+            self.source_language = 'en'
+            self.target_language = 'ru'
+            self.dialog.language_label.Label = 'Английский -> Русский'
+        else:
+            self.source_language = 'ru'
+            self.target_language = 'en'
+            self.dialog.language_label.Label = 'Русский -> Английский'
 
-		# response = requests.post(self.url_yandex,
-		# 	json = body,
-		# 	headers = headers
-		# )
-		# parsed_string = json.loads(response.text)
-		# translated_text = parsed_string['translations'][0]['text']
-		
-		# # Вставляем переведенный текст вместо исходного
-		# cursor.setString(translated_text)
-		open_translate_dialog()
-		
+    def translate(self):
+        # Получение объекта рабочего стола
+        desktop = self.ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", self.ctx)
+        # Получение объекта текущего документа
+        document = desktop.getCurrentComponent()
+        # Проверка возможности доступа к тексту документа
+        if not hasattr(document, "Text"):
+            Window.errorbox('Нет доступа к документу', 'Ошибка')
+            return
+        # controller = document.getCurrentController()
+        # select = controller.getSelection()
+        
+        cursor = document.getCurrentController().getViewCursor()
+        selected_text = cursor.getString()
+        if selected_text == '':
+            Window.errorbox('Нет выделенного текста', 'Ошибка')
+            return
+        
+        # if self.dialog.text_box.Text != '':
+        #     Window.errorbox('Переведенный текст уже существует', 'Ошибка')
+        #     return
+        body = {
+        	"targetLanguageCode": self.target_language,
+        	"sourceLanguageCode": self.source_language,
+        	"texts": selected_text,
+        }
 
-def _create_translate_dialog():
-    BUTTON_WH = 20
-    args= {
-        'Name': 'translate_window',
-        'Title': 'Перевод текста',
-        'Width': 200,
-        'Height': 220,
-    }
-    dialog = Window.create_dialog(args)
-    #dialog.id = ID_EXTENSION
-    #dialog.events = Controllers
+        headers = {
+        	"Content-Type": self.CONTENT_TYPE,
+        	"Authorization": self.TOKEN
+        }
 
-    args = {
-        'Type': 'Label',
-        'Name': 'text_label',
-        'Width': 150,
-        'Height': 20,
-        'Align': 1,
-        'VerticalAlign': 1,
-        'Step': 10,
-        'FontHeight': 16,
-	    'Label': 'Текст: выделенный фрагмент',
-    }
-    dialog.add_control(args)
-    dialog.center(dialog.text_label, y=5)
+        response = requests.post(self.url_yandex,
+        	json = body,
+        	headers = headers
+        )
+        
+        if response.status_code != 200:
+            Window.errorbox('Ошибка перевода, попробуйте позже', 'Ошибка')
+            return
+        
+        parsed_string = json.loads(response.text)
+        translated_text = parsed_string['translations'][0]['text']
+        
+        # Вставляем переведенный текст вместо исходного
+        self.dialog.text_box.Text = translated_text
+ 
+class Translate_Context(unohelper.Base, XJobExecutor):
+    def __init__(self, ctx):
+        '''Конструктор класса'''
+        # Сохранение контекста компонента для последующего использования 
+        self.translate = Translate_Text(ctx)
+        self.dialog = self.create_translate_dialog()
+        self.translate.dialog = self.dialog
+    
+    def trigger(self, event):
+        '''Обработчик события'''
+        self.dialog.open()
 
-    args = {
-        'Type': 'Label',
-        'Name': 'language_label',
-        'Width': 150,
-        'Height': 20,
-        'Align': 1,
-        'VerticalAlign': 1,
-        'Step': 10,
-        'FontHeight': 16,
-	    'Label': 'Русский -> Английский',
-    }
-    dialog.add_control(args)
-    dialog.center(dialog.language_label, y=25)
+    def create_translate_dialog(self):
+        BUTTON_WH = 20
+        args= {
+            'Name': 'translate_window',
+            'Title': 'Перевод текста',
+            'Width': 200,
+            'Height': 220,
+        }
+        dialog = Window.create_dialog(args)
 
-    args = {
-        'Type': 'Button',
-        'Name': 'change_but',
-        'Label': 'Поменять язык',
-        'Width': 100,
-        'Height': 20,
-        'Step': 10,
-	    'Align': 1,
-	    'FontHeight': 16,
-    }
-    dialog.add_control(args)
-    dialog.center(dialog.change_but, y=50)
+        args = {
+            'Type': 'Label',
+            'Name': 'text_label',
+            'Width': 150,
+            'Height': 20,
+            'Align': 1,
+            'VerticalAlign': 1,
+            'Step': 10,
+            'FontHeight': 16,
+            'Label': 'Текст: выделенный фрагмент',
+        }
+        dialog.add_control(args)
+        dialog.center(dialog.text_label, y=5)
 
-    args = {
-        'Type': 'Button',
-        'Name': 'translate_but',
-        'Label': 'Перевести',
-        'Width': 100,
-        'Height': 20,
-        'Step': 10,
-	    'Align': 1,
-	    'FontHeight': 16,
-    }
-    dialog.add_control(args)
-    dialog.center(dialog.translate_but, y=75)
+        args = {
+            'Type': 'Label',
+            'Name': 'language_label',
+            'Width': 150,
+            'Height': 20,
+            'Align': 1,
+            'VerticalAlign': 1,
+            'Step': 10,
+            'FontHeight': 16,
+            'Label': 'Русский -> Английский',
+        }
+        dialog.add_control(args)
+        dialog.center(dialog.language_label, y=25)
 
-    args = {
-        'Type': 'Text',
-        'Name': 'text_box',
-        'Text': 'hellohello',
-        'Width': 190,
-        'Height': 110,
-        'Align': 0,
-        'VerticalAlign': 0,
-        'Step': 10,
-        'FontHeight': 14,
-        'TextColor': Window.get_color('black'),
-        'AutoVScroll': True,
-        'BackgroundColor': Window.get_color('white'),
-        'MultiLine': True,
-    }
-    dialog.add_control(args)
-    dialog.center(dialog.text_box, y=-10)
-    # dialog.lst_log.visible = False
+        args = {
+            'Type': 'Button',
+            'Name': 'change_but',
+            'Label': 'Поменять язык',
+            'Width': 100,
+            'Height': 20,
+            'Step': 10,
+            'Align': 1,
+            'FontHeight': 16,
+        }
+        ctl = dialog.add_control(args)
+        ctl.addActionListener(self.translate)
+        dialog.center(dialog.change_but, y=50)
 
-    return dialog
+        args = {
+            'Type': 'Button',
+            'Name': 'translate_but',
+            'Label': 'Перевести',
+            'Width': 100,
+            'Height': 20,
+            'Step': 10,
+            'Align': 1,
+            'FontHeight': 16,
+        }
+        ctl = dialog.add_control(args)
+        ctl.addActionListener(self.translate)
+        dialog.center(dialog.translate_but, y=75)
 
-def open_translate_dialog():
-    dialog = _create_translate_dialog()
+        args = {
+            'Type': 'Text',
+            'Name': 'text_box',
+            'Text': '',
+            'Width': 190,
+            'Height': 110,
+            'Align': 0,
+            'VerticalAlign': 0,
+            'Step': 10,
+            'FontHeight': 14,
+            'TextColor': Window.get_color('black'),
+            'AutoVScroll': True,
+            'BackgroundColor': Window.get_color('white'),
+            'MultiLine': True,
+        }
+        dialog.add_control(args)
+        dialog.center(dialog.text_box, y=-10)
+        # dialog.lst_log.visible = False
 
-    dialog.open()
-    return
+        return dialog
 
 # Регистрация реализации службы
 g_ImplementationHelper = unohelper.ImplementationHelper()
 
 g_ImplementationHelper.addImplementation( \
-		TranslateText,                                # Имя класса UNO
-		"org.openoffice.comp.pyuno.exp.TranslateText",# Имя реализации
+		Translate_Context,                                # Имя класса UNO
+		"org.openoffice.comp.pyuno.exp.Translate_Context",# Имя реализации
 		("com.sun.star.task.Job",),)                # Список реализованных служб
