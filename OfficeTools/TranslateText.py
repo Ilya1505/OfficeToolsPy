@@ -1,9 +1,3 @@
-from __future__ import unicode_literals
-import io
-import html
-import os.path
-import codecs
-
 import uno
 import unohelper
 import requests
@@ -21,6 +15,7 @@ from com.sun.star.task import XJobExecutor
 
 class Translate_Text( unohelper.Base, XActionListener ):
     def __init__(self, ctx):
+        # Сохранение контекста компонента для последующего использования 
         self.ctx = ctx
         self.CONTENT_TYPE = "application/json"
         self.TOKEN = "Api-Key " + token_translate
@@ -54,18 +49,14 @@ class Translate_Text( unohelper.Base, XActionListener ):
         if not hasattr(document, "Text"):
             Window.errorbox('Нет доступа к документу', 'Ошибка')
             return
-        # controller = document.getCurrentController()
-        # select = controller.getSelection()
         
         cursor = document.getCurrentController().getViewCursor()
         selected_text = cursor.getString()
+        ###########validator###############
         if selected_text == '':
             Window.errorbox('Нет выделенного текста', 'Ошибка')
             return
-        
-        # if self.dialog.text_box.Text != '':
-        #     Window.errorbox('Переведенный текст уже существует', 'Ошибка')
-        #     return
+
         body = {
         	"targetLanguageCode": self.target_language,
         	"sourceLanguageCode": self.source_language,
@@ -76,12 +67,14 @@ class Translate_Text( unohelper.Base, XActionListener ):
         	"Content-Type": self.CONTENT_TYPE,
         	"Authorization": self.TOKEN
         }
-
-        response = requests.post(self.url_yandex,
-        	json = body,
-        	headers = headers
-        )
-        
+        try:
+            response = requests.post(self.url_yandex,
+        	    json = body,
+        	    headers = headers
+            )
+        except:
+            Window.errorbox('Ошибка перевода, проверьте подключение к сети или попробуйте позже', 'Ошибка соединения')
+            return
         if response.status_code != 200:
             Window.errorbox('Ошибка перевода, проверьте подключение к сети или попробуйте позже', 'Ошибка')
             return
@@ -89,13 +82,13 @@ class Translate_Text( unohelper.Base, XActionListener ):
         parsed_string = json.loads(response.text)
         translated_text = parsed_string['translations'][0]['text']
         
-        # Вставляем переведенный текст вместо исходного
+        # Вставляем переведенный текст
         self.dialog.text_box.Text = translated_text
+        return
  
 class Translate_Context(unohelper.Base, XJobExecutor):
     def __init__(self, ctx):
         '''Конструктор класса'''
-        # Сохранение контекста компонента для последующего использования 
         self.translate = Translate_Text(ctx)
         self.dialog = self.create_translate_dialog()
         self.translate.dialog = self.dialog
@@ -105,7 +98,6 @@ class Translate_Context(unohelper.Base, XJobExecutor):
         self.dialog.open()
 
     def create_translate_dialog(self):
-        BUTTON_WH = 20
         args= {
             'Name': 'translate_window',
             'Title': 'Перевод текста',
@@ -187,8 +179,6 @@ class Translate_Context(unohelper.Base, XJobExecutor):
         }
         dialog.add_control(args)
         dialog.center(dialog.text_box, y=-10)
-        # dialog.lst_log.visible = False
-
         return dialog
 
 # Регистрация реализации службы
@@ -197,4 +187,4 @@ g_ImplementationHelper = unohelper.ImplementationHelper()
 g_ImplementationHelper.addImplementation( \
 		Translate_Context,                                # Имя класса UNO
 		"org.openoffice.comp.pyuno.exp.Translate_Context",# Имя реализации
-		("com.sun.star.task.Job",),)                # Список реализованных служб
+		("com.sun.star.task.Job",),)                      # Список реализованных служб

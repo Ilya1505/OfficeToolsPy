@@ -4,7 +4,6 @@ import Window
 from string import punctuation #сборник символов пунктуации
 from razdel import tokenize
 from directory import stopwords, token_synonym, url_synonym
-import sys
 from pymystem3 import Mystem
 import requests
 import json
