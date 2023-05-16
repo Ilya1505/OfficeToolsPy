@@ -10,7 +10,7 @@ import requests
 import json
 import Window
 
-from token_yandex_api import token
+from directory import token_translate
 from com.sun.star.awt.FontWeight import (NORMAL, BOLD)
 from com.sun.star.awt.FontUnderline import (SINGLE, NONE)
 from com.sun.star.awt.FontSlant import (NONE, ITALIC)
@@ -23,7 +23,7 @@ class Translate_Text( unohelper.Base, XActionListener ):
     def __init__(self, ctx):
         self.ctx = ctx
         self.CONTENT_TYPE = "application/json"
-        self.TOKEN = "Api-Key " + token
+        self.TOKEN = "Api-Key " + token_translate
         self.source_language = 'ru'
         self.target_language = 'en'
         self.url_yandex = 'https://translate.api.cloud.yandex.net/translate/v2/translate'
@@ -83,7 +83,7 @@ class Translate_Text( unohelper.Base, XActionListener ):
         )
         
         if response.status_code != 200:
-            Window.errorbox('Ошибка перевода, попробуйте позже', 'Ошибка')
+            Window.errorbox('Ошибка перевода, проверьте подключение к сети или попробуйте позже', 'Ошибка')
             return
         
         parsed_string = json.loads(response.text)

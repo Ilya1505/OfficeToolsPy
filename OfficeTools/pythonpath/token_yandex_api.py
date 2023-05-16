@@ -1,2 +1,0 @@
-token = ""
-id_token = ""
