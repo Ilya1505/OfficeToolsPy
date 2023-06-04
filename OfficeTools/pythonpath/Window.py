@@ -39,20 +39,7 @@ def get_app_config(node_name: str, key: str=''):
     except Exception as e:
         return ''
 
-OS = platform.system()
-IS_WIN = OS == 'Windows'
-IS_MAC = OS == 'Darwin'
-USER = getpass.getuser()
-PC = platform.node()
-DESKTOP = os.environ.get('DESKTOP_SESSION', '')
-INFO_DEBUG = f"{sys.version}\n\n{platform.platform()}\n\n" + '\n'.join(sys.path)
 NAME = TITLE = get_app_config('org.openoffice.Setup/Product', 'ooName')
-VERSION = get_app_config('org.openoffice.Setup/Product','ooSetupVersion')
-
-PYTHON = 'python'
-if IS_WIN:
-    PYTHON = 'python.exe'
-
 DIR = {
     'images': 'images',
     'locales': 'locales',
@@ -68,9 +55,6 @@ def _set_properties(model, properties):
     model.setPropertyValues(keys, values)
     return
 
-# ~ BorderColor = ?
-# ~ FontStyleName = ?
-# ~ HelpURL = ?
 class UnoBaseObject(object):
 
     def __init__(self, obj, path=''):
@@ -326,6 +310,7 @@ class UnoBaseObject(object):
             self.center()
         return
 
+# класс компонета label
 class UnoLabel(UnoBaseObject):
 
     def __init__(self, obj):
@@ -342,7 +327,7 @@ class UnoLabel(UnoBaseObject):
     def value(self, value):
         self.model.Label = value
 
-
+# класс компонета link
 class UnoLabelLink(UnoLabel):
 
     def __init__(self, obj):
@@ -352,6 +337,7 @@ class UnoLabelLink(UnoLabel):
     def type(self):
         return 'link'
 
+# класс компонета button
 class UnoButton(UnoBaseObject):
 
     def __init__(self, obj):
@@ -368,6 +354,7 @@ class UnoButton(UnoBaseObject):
     def value(self, value):
         self.model.Label = value
 
+# класс компонета Radio
 class UnoRadio(UnoBaseObject):
 
     def __init__(self, obj):
@@ -384,6 +371,7 @@ class UnoRadio(UnoBaseObject):
     def value(self, value):
         self.model.Label = value
 
+# класс компонета checkBox
 class UnoCheckBox(UnoBaseObject):
 
     def __init__(self, obj):
@@ -414,7 +402,7 @@ class UnoCheckBox(UnoBaseObject):
     def tri_state(self, value):
         self.model.TriState = value
 
-# ~ https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1awt_1_1UnoControlEditModel.html
+# класс компонета text
 class UnoText(UnoBaseObject):
 
     def __init__(self, obj):
@@ -441,6 +429,7 @@ class UnoText(UnoBaseObject):
     def validate(self):
         return
 
+# класс компонета image
 class UnoImage(UnoBaseObject):
 
     def __init__(self, obj):
@@ -465,7 +454,7 @@ class UnoImage(UnoBaseObject):
         self.m.ImageURL = None
         self.m.ImageURL = _P.to_url(value)
 
-
+# класс компонета listBox
 class UnoListBox(UnoBaseObject):
 
     def __init__(self, obj):
@@ -548,14 +537,6 @@ UNO_CLASSES = {
     'listbox': UnoListBox,
 }
 
-# ~ https://api.libreoffice.org/docs/idl/ref/namespacecom_1_1sun_1_1star_1_1sheet.html#aa5aa6dbecaeb5e18a476b0a58279c57a
-# class ValidationType():
-#     from com.sun.star.sheet.ValidationType \
-#         import ANY, WHOLE, DECIMAL, DATE, TIME, TEXT_LEN, LIST, CUSTOM
-# VT = ValidationType
-
-NAME = TITLE = get_app_config('org.openoffice.Setup/Product', 'ooName')
-
 def msgbox(message, title=TITLE, buttons=MSG_BUTTONS.BUTTONS_OK, type_msg='infobox'):
     """ Create message box
         type_msg: infobox, warningbox, errorbox, querybox, messbox
@@ -578,20 +559,7 @@ def warning(message, title=TITLE):
 def errorbox(message, title=TITLE):
     return msgbox(message, title, type_msg='errorbox')
 
-# ~ 'CurrencyField': 'com.sun.star.awt.UnoControlCurrencyFieldModel',
-# ~ 'DateField': 'com.sun.star.awt.UnoControlDateFieldModel',
-# ~ 'FileControl': 'com.sun.star.awt.UnoControlFileControlModel',
-# ~ 'FormattedField': 'com.sun.star.awt.UnoControlFormattedFieldModel',
-# ~ 'NumericField': 'com.sun.star.awt.UnoControlNumericFieldModel',
-# ~ 'PatternField': 'com.sun.star.awt.UnoControlPatternFieldModel',
-# ~ 'ProgressBar': 'com.sun.star.awt.UnoControlProgressBarModel',
-# ~ 'ScrollBar': 'com.sun.star.awt.UnoControlScrollBarModel',
-# ~ 'SimpleAnimation': 'com.sun.star.awt.UnoControlSimpleAnimationModel',
-# ~ 'SpinButton': 'com.sun.star.awt.UnoControlSpinButtonModel',
-# ~ 'Throbber': 'com.sun.star.awt.UnoControlThrobberModel',
-# ~ 'TimeField': 'com.sun.star.awt.UnoControlTimeFieldModel',
-
-
+# класс пользовательской формы
 class LODialog(object):
     SEPARATION = 5
     MODELS = {
@@ -607,6 +575,7 @@ class LODialog(object):
         'combobox': 'com.sun.star.awt.UnoControlComboBoxModel',
     }
 
+    # конструткор класса
     def __init__(self, args):
         self._obj = self._create(args)
         self._model = self.obj.Model
@@ -618,6 +587,7 @@ class LODialog(object):
         self._path = ''
         self._init_controls()
 
+    # создание формы
     def _create(self, args):
         service = 'com.sun.star.awt.DialogProvider'
         path = args.pop('Path', '')
@@ -650,6 +620,7 @@ class LODialog(object):
         dlg.createPeer(toolkit, None)
         return dlg
 
+    # получение типа компонента
     def _get_type_control(self, name):
         name = name.split('.')[2]
         types = {
@@ -659,6 +630,7 @@ class LODialog(object):
         }
         return types[name]
 
+    # инициализация компонента
     def _init_controls(self):
         for control in self.obj.getControls():
             tipo = self._get_type_control(control.ImplementationName)
@@ -742,6 +714,7 @@ class LODialog(object):
 
         return args
 
+    # добавление компонента
     def add_control(self, args):
         tipo = args.pop('Type').lower()
 
@@ -761,6 +734,7 @@ class LODialog(object):
         control = self.obj.getControl(name)
         return control
 
+    # центрирования компонента
     def center(self, control, x=0, y=0):
         w = self.width
         h = self.height
@@ -787,6 +761,7 @@ class LODialog(object):
         control.y = y
         return
 
+    # открытие формы
     def open(self, modal=True):
         self._modal = modal
         if modal:
@@ -795,6 +770,7 @@ class LODialog(object):
             self.visible = True
         return
 
+    # закрытие формы
     def close(self, value=0):
         if self._modal:
             value = self.obj.endDialog(value)

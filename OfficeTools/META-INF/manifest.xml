@@ -5,6 +5,5 @@
 <manifest:file-entry manifest:full-path="FindSources.py" manifest:media-type="application/vnd.sun.star.uno-component;type=Python"/>
 <manifest:file-entry manifest:full-path="Window.py" manifest:media-type="application/vnd.sun.star.uno-component;type=Python"/>
 <manifest:file-entry manifest:full-path="directory.py" manifest:media-type="application/vnd.sun.star.uno-component;type=Python"/>
-<manifest:file-entry manifest:full-path="docopt.py" manifest:media-type="application/vnd.sun.star.uno-component;type=Python"/>
 <manifest:file-entry manifest:full-path="Addons.xcu" manifest:media-type="application/vnd.sun.star.configuration-data"/>
 </manifest:manifest>

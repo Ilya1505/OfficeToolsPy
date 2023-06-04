@@ -5,7 +5,7 @@
  xmlns:xlink="http://www.w3.org/1999/xlink">
     <identifier value="org.broffice.RUS"/>
     <icon>
-        <default xlink:href="icons/image_42.png" />
+        <default xlink:href="icons/office_tools_image.png" />
     </icon>
     <version value="1.0"/>
     <registration>

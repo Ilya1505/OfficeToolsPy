@@ -14,13 +14,16 @@ from com.sun.star.awt.FontSlant import (NONE, ITALIC)
 from com.sun.star.awt import XActionListener
 from com.sun.star.task import XJobExecutor
 
+#главный класс нормализации текста и поиска синонимов
 class Analyze_Text( unohelper.Base, XActionListener ):
+    #конструктор класса
     def __init__(self, ctx):
-        # Сохранение контекста компонента для последующего использования 
-        self.ctx = ctx
+        self.ctx = ctx# контекст документа
         self.dialog = None
-        self.freq_lemmas = None
+        self.freq_lemmas = None# словарь слов с их количеством вхождений
+        self.selected_text = ''# выделенный текст
 
+    # слушатель события нажатия на кнопку
     def actionPerformed(self, actionEvent):
         if actionEvent.Source.Model.Name == 'analyze_text_but':
             self.text_normalization()
@@ -28,6 +31,7 @@ class Analyze_Text( unohelper.Base, XActionListener ):
             self.search_synonyms()
         return
     
+    # метод нормализации текста
     def text_normalization(self):
         # Получение объекта рабочего стола
         desktop = self.ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", self.ctx)
@@ -39,29 +43,33 @@ class Analyze_Text( unohelper.Base, XActionListener ):
             return
         
         cursor = document.getCurrentController().getViewCursor()
-        selected_text = cursor.getString()
+        self.selected_text = cursor.getString()# получение выделенного текста
         ##########validator###############
-        if selected_text == '':
+        if self.selected_text == '':
             Window.errorbox('Нет выделенного текста', 'Ошибка')
             return
-        selected_text = selected_text.lower()
-        token_text = list(tokenize(selected_text))
-        punct = stopwords + [p for p in punctuation]
+        self.selected_text = self.selected_text.lower()# перевод текста в нижний регистр
+        token_text = list(tokenize(self.selected_text))# токенизация текста
+        punct = stopwords + [p for p in punctuation]# список стоп-слов и знаков пунктуации
+        # удаление стоп-слов и знаков пунктуации
         clean_token = [word.text for word in token_text if word.text not in punct]
         clean_token = ' '.join(clean_token)
-        mystem = Mystem()
+        mystem = Mystem()# объект для лемматизации слов
         try:
-            lemmas = mystem.lemmatize(clean_token)
+            lemmas = mystem.lemmatize(clean_token)# лемматизация слов
         except:
             Window.errorbox('Ошибка лемматизации, проверьте исходный текст', 'Ошибка')
             return
         punct = [' ', '\n']
+        # удаление пробелов и символов новой строки
         lemmas = [word for word in lemmas if word not in punct]
         if len(lemmas) == 0:
             Window.errorbox('Не найдено подходящих слов', 'Ошибка')
             return
 
+        # подсчет числа вхождений каждого слова в текст и сортировка по убыванию
         self.freq_lemmas = self.sorted_quantity(self.counter_word(lemmas))
+        # вывод списка часто встречаымх слов в интерфейс пользователя
         count = 0
         for lem in self.freq_lemmas:
             self.dialog.source_word_list.insert(lem + " ( " + str(self.freq_lemmas.get(lem)) + " )")
@@ -69,9 +77,10 @@ class Analyze_Text( unohelper.Base, XActionListener ):
             if count > 10:
                 break
         self.dialog.source_word_list.select()
-        self.show_synonyms_control()
+        self.show_synonyms_control()# вывод компонентов формы
         return
-        
+
+    # подсчет числа вхождений каждого слова в текст    
     def counter_word(self, lemmas):
         freq_word = {}
         for word in lemmas:
@@ -81,24 +90,32 @@ class Analyze_Text( unohelper.Base, XActionListener ):
                 freq_word[word] = 1
         return freq_word
 
+    # сортировка по убыванию
     def sorted_quantity(self, dictionary):
         return dict(sorted(dictionary.items(), key=lambda value: value[1], reverse=True))
-        
+
+    # метод поиска синонимов    
     def search_synonyms(self):
-        self.dialog.synonyms_word_list.clear()
+        self.dialog.synonyms_word_list.clear()# очистка списка синонимов
+        # получение выбранного слова
         select_word = self.get_select_lemm(self.dialog.source_word_list.value)
+        # пост-запрос на сервис поиска синонимов
         synonyms = self.post_reguest(select_word)
+        # если синонимы не найдены
         if len(synonyms) == 1:
             Window.msgbox('Для выбранного слова синонимы не найдены', 'Результат')
             return
+        # вывод всех синонимов списком в интерфейс пользователя
         for word in synonyms:
             self.dialog.synonyms_word_list.insert(word)
         self.dialog.synonyms_word_list.select()
         return
     
+    # получение выбранного слова
     def get_select_lemm(self, lemmas):
         return lemmas.split(' ')[0]
 
+    # метод post-запроса на сервис поиска синонимов
     def post_reguest(self, word):
         
         json_synonym = {
@@ -112,6 +129,7 @@ class Analyze_Text( unohelper.Base, XActionListener ):
             'scores': 0,
         }
 
+        # post-запрос
         try:
             response = requests.post(url_synonym, json_synonym)
         except:
@@ -120,10 +138,11 @@ class Analyze_Text( unohelper.Base, XActionListener ):
         if response.status_code != 200:
             Window.errorbox('Проверьте подключение к сети или попробуйте позже', 'Ошибка')
             return
-        parsed_string = json.loads(response.text)
-        synonyms = parsed_string['response']['1']['syns']
+        parsed_string = json.loads(response.text)# парсинг строки в json
+        synonyms = parsed_string['response']['1']['syns']# выборка всех синонимов
         return synonyms
     
+    # вывод компонентов формы
     def show_synonyms_control(self):
         self.dialog.frequence_label.visible = True
         self.dialog.source_word_list.visible = True
@@ -132,19 +151,19 @@ class Analyze_Text( unohelper.Base, XActionListener ):
         self.dialog.analyze_text_but.visible = False
 
 
-
+# класс обертка, инициализирующий класс подсистемы
 class Analyze_Context(unohelper.Base, XJobExecutor):
+    # конструктор класса
     def __init__(self, ctx):
-        '''Конструктор класса'''
-        self.analyze = Analyze_Text(ctx)
-        self.dialog = self.create_analyze_dialog()
+        self.analyze = Analyze_Text(ctx)# создание класса обработки текста и поиска синонимов
+        self.dialog = self.create_analyze_dialog()# создание пользовательской формы
         self.analyze.dialog = self.dialog
 	
-
+    # обработчик события
     def trigger(self, event):
-        '''Обработчик события'''
         self.dialog.open()
 
+    # создание пользовательской формы
     def create_analyze_dialog(self):
         args= {
             'Name': 'analyze_window',
@@ -165,8 +184,8 @@ class Analyze_Context(unohelper.Base, XJobExecutor):
             'FontHeight': 16,
             'Label': 'Текст: выделенный фрагмент',
         }
-        dialog.add_control(args)
-        dialog.center(dialog.text_label, y=5)
+        dialog.add_control(args)# добавление компонентов на форму
+        dialog.center(dialog.text_label, y=5)# центрирование компонентов
 
         args = {
             'Type': 'Label',
@@ -206,7 +225,7 @@ class Analyze_Context(unohelper.Base, XJobExecutor):
             'FontHeight': 16,
         }
         ctl = dialog.add_control(args)
-        ctl.addActionListener(self.analyze)
+        ctl.addActionListener(self.analyze)# добавление слушателей на кнопку
         dialog.center(dialog.search_synonyms_but, y=105)
         dialog.search_synonyms_but.visible = False
 
