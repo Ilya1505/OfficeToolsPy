@@ -7,6 +7,7 @@ from directory import stopwords, token_synonym, url_synonym
 from pymystem3 import Mystem
 import requests
 import json
+from Validator import *
 
 from com.sun.star.awt.FontWeight import (NORMAL, BOLD)
 from com.sun.star.awt.FontUnderline import (SINGLE, NONE)
@@ -22,6 +23,7 @@ class Analyze_Text( unohelper.Base, XActionListener ):
         self.dialog = None
         self.freq_lemmas = None# словарь слов с их количеством вхождений
         self.selected_text = ''# выделенный текст
+        self.validator = Validator()
 
     # слушатель события нажатия на кнопку
     def actionPerformed(self, actionEvent):
@@ -33,20 +35,8 @@ class Analyze_Text( unohelper.Base, XActionListener ):
     
     # метод нормализации текста
     def text_normalization(self):
-        # Получение объекта рабочего стола
-        desktop = self.ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", self.ctx)
-        # Получение объекта текущего документа
-        document = desktop.getCurrentComponent()
-        # Проверка возможности доступа к тексту документа
-        if not hasattr(document, "Text"):
-            Window.errorbox('Нет доступа к документу', 'Ошибка')
-            return
-        
-        cursor = document.getCurrentController().getViewCursor()
-        self.selected_text = cursor.getString()# получение выделенного текста
-        ##########validator###############
+        self.selected_text = self.validator.validate_rough(self.ctx)
         if self.selected_text == '':
-            Window.errorbox('Нет выделенного текста', 'Ошибка')
             return
         self.selected_text = self.selected_text.lower()# перевод текста в нижний регистр
         token_text = list(tokenize(self.selected_text))# токенизация текста

@@ -3,6 +3,7 @@ import unohelper
 import requests
 import json
 import Window
+from Validator import *
 
 from directory import token_translate
 from com.sun.star.awt.FontWeight import (NORMAL, BOLD)
@@ -25,6 +26,7 @@ class Translate_Text( unohelper.Base, XActionListener ):
         self.translated_text = ''# переведенный текст
         self.url_yandex = 'https://translate.api.cloud.yandex.net/translate/v2/translate'
         self.dialog = None
+        self.validator = Validator()
 
     # слушатель на событие нажатия кнопки
     def actionPerformed(self, actionEvent):
@@ -46,20 +48,8 @@ class Translate_Text( unohelper.Base, XActionListener ):
 
     # метод перевода
     def translate(self):
-        # Получение объекта рабочего стола
-        desktop = self.ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", self.ctx)
-        # Получение объекта текущего документа
-        document = desktop.getCurrentComponent()
-        # Проверка возможности доступа к тексту документа
-        if not hasattr(document, "Text"):
-            Window.errorbox('Нет доступа к документу', 'Ошибка')
-            return
-        
-        cursor = document.getCurrentController().getViewCursor()
-        self.selected_text = cursor.getString()
-        ###########validator###############
+        self.selected_text = self.validator.validate_easy(self.ctx)
         if self.selected_text == '':
-            Window.errorbox('Нет выделенного текста', 'Ошибка')
             return
         self.translated_text = self.request(self.selected_text)# метод запроса
         if self.translated_text == '':

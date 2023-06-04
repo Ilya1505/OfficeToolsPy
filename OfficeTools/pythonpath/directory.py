@@ -21,7 +21,9 @@ stopwords = ['и', 'в', 'во', 'не', 'что',
              '<', '>', '"', '"', '#', '$', '&', '*', '(', ')', '-', '+', '=', '_', '@', '/', '%',
              '`', '~']
 
-token_translate = 'AQVN33Fe8eIOOFGXgW0qRm4yLyp_UANMi_N1ri4f'
-id_token = 'ajeve5ff3oge718pf0bd'
-token_synonym = 'ddc7ff3cddd4100e36dd0b5d93a6a263bbdf77bc'
+token_translate = ''
+id_token = ''
+token_synonym = ''
 url_synonym = 'http://paraphraser.ru/api'
+token_google_search = ''
+token_google_id = ''

@@ -52,7 +52,7 @@
                     </node>
                     <node oor:name="m3" oor:op="replace">
                         <prop oor:name="URL" oor:type="xs:string">
-                            <value>service:org.openoffice.comp.pyuno.exp.FindSources?export</value>
+                            <value>service:org.openoffice.comp.pyuno.exp.Find_Sources_Context?export</value>
                         </prop>
                         <prop oor:name="Title" oor:type="xs:string">
                             <value xml:lang="en-US">Find sources</value>
